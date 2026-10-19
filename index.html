@@ -1030,7 +1030,8 @@ function syncPlatUI() {
   if (vb) {
     const usable = plat.cfg.touch.vibrate && !!navigator.vibrate;
     vb.style.display = plat.cfg.touch.vibrate ? '' : 'none';
-    vb.textContent = t('vibrate') + ' → ' + (settings.vibrate && navigator.vibrate ? t('vibOn') : t('vibOff')) + (usable ? '' : ' · ' + t('vibUnsup'));
+    /* 文案只看设置本身；设备不支持时在末尾追加提示，不再把状态显示成"永远关闭" */
+    vb.textContent = t('vibrate') + ' → ' + (settings.vibrate ? t('vibOn') : t('vibOff')) + (usable ? '' : ' · ' + t('vibUnsup'));
   }
   const ma = $('btnMultiAid');
   if (ma) ma.textContent = t('multiAid') + ' → ' + (settings.multiAid ? t('vibOn') : t('vibOff'));
@@ -3779,6 +3780,23 @@ document.querySelectorAll('[data-fx]').forEach(function (btn) {
     settings.fx = +btn.getAttribute('data-fx');
     saveCfg(); applyI18n(); sfxUi();
   });
+});
+/* 运行模式：自动 / PC / 手机 —— 手动切换（重新解析平台 + 重算布局 + 刷新按钮高亮） */
+document.querySelectorAll('#platRow [data-plat]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    settings.platMode = btn.getAttribute('data-plat');
+    saveCfg();
+    resolvePlatform();               // 应用模式、更新 body 类名、重算布局
+    sfxUi();
+  });
+});
+/* 震动反馈开关（仅手机模式显示；不支持震动的设备仍可切换状态，并提示"设备不支持"） */
+if ($('btnVib')) $('btnVib').addEventListener('click', function () {
+  settings.vibrate = settings.vibrate ? 0 : 1;
+  saveCfg();
+  syncPlatUI();
+  sfxUi();
+  if (settings.vibrate) { try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) {} }
 });
 /* 主题切换：CSS 变量与 JS 颜色对象同步更新 */
 document.querySelectorAll('#themeRow .pill').forEach(function (btn) {
